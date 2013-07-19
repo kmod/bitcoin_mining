@@ -10,6 +10,7 @@ import socket
 import struct
 import sys
 import time
+import traceback
 
 TEST = 0
 THRESH = 1
@@ -134,39 +135,44 @@ class Worker(object):
         self._done_ev.wait()
 
     def _target(self, job_id, extranonce2, ntime, preheader_bin):
-        start = time.time()
+        try:
+            start = time.time()
 
-        for i in xrange(2**32):
-            if i % 100000 == 0:
-                print i, "%.1f kh/s" % (i * .001 / (time.time() - start))
-                if self._quit:
-                    print "QUITTING WORKER"
+            # for i in xrange(2**31-1):
+            for i in xrange(2**32):
+                if i % 100000 == 0:
+                    print i, "%.1f kh/s" % (i * .001 / (time.time() - start + .001))
+                    if self._quit:
+                        print "QUITTING WORKER"
+                        break
+
+                nonce_bin = struct.pack(">I", i)
+                if TEST:
+                    nonce_bin = "b2957c02".decode("hex")[::-1]
+
+                header_bin = preheader_bin + nonce_bin
+                hash_bin = doublesha(header_bin)
+
+                val = struct.unpack("<I", hash_bin[-4:])[0]
+                if val < THRESH:
+                    nonce = nonce_bin.encode("hex")
+                    print nonce, extranonce2, ntime
+                    print hash_bin.encode("hex")
+                    hash_int = uint256_from_str(hash_bin)
+                    block_hash_hex = "%064x" % hash_int
+                    print block_hash_hex
+
+
+                    self._cl.submit(job_id, extranonce2, ntime, nonce)
                     break
-
-            nonce_bin = struct.pack(">I", i)
-            if TEST:
-                nonce_bin = "b2957c02".decode("hex")[::-1]
-
-            header_bin = preheader_bin + nonce_bin
-            hash_bin = doublesha(header_bin)
-
-            val = struct.unpack("<I", hash_bin[-4:])[0]
-            if val < THRESH:
-                nonce = nonce_bin.encode("hex")
-                print nonce, extranonce2, ntime
-                print hash_bin.encode("hex")
-                hash_int = uint256_from_str(hash_bin)
-                block_hash_hex = "%064x" % hash_int
-                print block_hash_hex
-
-
-                self._cl.submit(job_id, extranonce2, ntime, nonce)
-                break
-            elif val < THRESH*10:
-                print "almost: %d (<%d)" % (val, THRESH)
-            # elif i == 0:
-                # print hash_bin.encode("hex")
-        self._done_ev.set()
+                elif val < THRESH*10:
+                    print "almost: %d (<%d)" % (val, THRESH)
+                # elif i == 0:
+                    # print hash_bin.encode("hex")
+            self._done_ev.set()
+        except:
+            traceback.print_exc()
+            os._exit(1)
 
 if __name__ == "__main__":
     sock = socket.socket()
