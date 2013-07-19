@@ -71,6 +71,10 @@ class StratumClient(object):
             s = s.strip()
             assert s
             d = simplejson.loads(s)
+
+            if d.get('method', None) == "mining.notify" and self.done:
+                continue
+
             print d
 
             if d.get('error', None):
@@ -110,9 +114,8 @@ class StratumClient(object):
                 preheader_bin = preheader.decode("hex")
                 preheader_bin = ''.join([preheader_bin[i*4:i*4+4][::-1] for i in range(0,19)])
 
-                if not self.done:
-                    self.w = Worker(self)
-                    self.w.start(params['job_id'], extranonce2, ntime, preheader_bin)
+                self.w = Worker(self)
+                self.w.start(params['job_id'], extranonce2, ntime, preheader_bin)
 
             else:
                 assert d['id'] < self.mid
@@ -145,8 +148,12 @@ class Worker(object):
 
             first_sha = hashlib.sha256(preheader_bin)
 
-            # for i in xrange(2**31-1):
-            for i in xrange(2**32):
+            if sys.maxint > 2**32:
+                max_nonce = 2**32
+            else:
+                max_nonce = 2**31 - 1
+            i = 0
+            while i < max_nonce:
                 if i % 100000 == 0:
                     print i, "%.1f kh/s" % (i * .001 / (time.time() - start + .001))
                     if self._quit:
@@ -176,6 +183,7 @@ class Worker(object):
                     break
                 elif val < THRESH*10:
                     print "almost: %d (<%d)" % (val, THRESH)
+                i += 1
                 # elif i == 0:
                     # print hash_bin.encode("hex")
             self._done_ev.set()
