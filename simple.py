@@ -74,6 +74,8 @@ if __name__ == "__main__":
 
             extranonce2 = ((int(time.time()) << 16) + os.getpid()) & 0xffffffff
             extranonce2 = struct.pack(">I", extranonce2).encode("hex")
+            if TEST:
+                extranonce2 = "00000001"
             print extranonce2
 
             coinbase = params['coinb1'] + extranonce1 + extranonce2 + params['coinb2']
