@@ -18,6 +18,11 @@ THRESH = 1
 def doublesha(d):
     return hashlib.sha256(hashlib.sha256(d).digest()).digest()
 
+def finish_dsha(sha, end):
+    sha = sha.copy()
+    sha.update(end)
+    return hashlib.sha256(sha.digest()).digest()
+
 def build_merkle_root(merkle_branch, coinbase_hash_bin):
     merkle_root = coinbase_hash_bin
     for h in merkle_branch:
@@ -138,6 +143,8 @@ class Worker(object):
         try:
             start = time.time()
 
+            first_sha = hashlib.sha256(preheader_bin)
+
             # for i in xrange(2**31-1):
             for i in xrange(2**32):
                 if i % 100000 == 0:
@@ -150,8 +157,10 @@ class Worker(object):
                 if TEST:
                     nonce_bin = "b2957c02".decode("hex")[::-1]
 
-                header_bin = preheader_bin + nonce_bin
-                hash_bin = doublesha(header_bin)
+                # header_bin = preheader_bin + nonce_bin
+                # hash_bin = doublesha(header_bin)
+                # assert hash_bin == finish_dsha(first_sha, nonce_bin)
+                hash_bin = finish_dsha(first_sha, nonce_bin)
 
                 val = struct.unpack("<I", hash_bin[-4:])[0]
                 if val < THRESH:
