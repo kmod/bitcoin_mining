@@ -12,7 +12,7 @@ import sys
 import time
 
 TEST = 0
-THRESH = 1000
+THRESH = 1
 
 def doublesha(d):
     return hashlib.sha256(hashlib.sha256(d).digest()).digest()
@@ -44,7 +44,7 @@ class StratumClient(object):
 
         self.f = f
         self.f.write("""{"id": 1, "method": "mining.subscribe", "params": []}\n""")
-        self.f.write("""{"id": 2, "method": "mining.authorize", "params": ["kmod_2", "123"]}\n""")
+        self.f.write("""{"id": 2, "method": "mining.authorize", "params": ["kmod_3", "123"]}\n""")
         self.f.flush()
 
         self.w = None
@@ -73,7 +73,10 @@ class StratumClient(object):
             if d['id'] == 1 and 'method' not in d:
                 job_id, extranonce1, extranonce2_size = d['result']
 
-            if d.get('method', None) == "mining.notify" and not self.done:
+            elif d.get('method', None) == "mining.set_difficulty":
+                assert d['params'] == [1]
+
+            elif d.get('method', None) == "mining.notify":
                 if self.w:
                     print "stopping existing worker"
                     self.w.stop()
@@ -101,11 +104,16 @@ class StratumClient(object):
                 preheader_bin = preheader.decode("hex")
                 preheader_bin = ''.join([preheader_bin[i*4:i*4+4][::-1] for i in range(0,19)])
 
-                self.w = Worker(self)
-                self.w.start(params['job_id'], extranonce2, ntime, preheader_bin)
+                if not self.done:
+                    self.w = Worker(self)
+                    self.w.start(params['job_id'], extranonce2, ntime, preheader_bin)
+
+            else:
+                assert d['id'] < self.mid
 
     def submit(self, job_id, extranonce2, ntime, nonce):
-        self.f.write("""{"params": ["kmod_2", "%s", "%s", "%s", "%s"], "id": %d, "method":"mining.submit"}\n""" % (job_id, extranonce2, ntime, nonce, self.mid))
+        print "SUBMITTING"
+        self.f.write("""{"params": ["kmod_3", "%s", "%s", "%s", "%s"], "id": %d, "method":"mining.submit"}\n""" % (job_id, extranonce2, ntime, nonce, self.mid))
         self.f.flush()
         self.mid += 1
         self.done = True
@@ -132,7 +140,7 @@ class Worker(object):
             if i % 100000 == 0:
                 print i, "%.1f kh/s" % (i * .001 / (time.time() - start))
                 if self._quit:
-                    print "QUITTING"
+                    print "QUITTING WORKER"
                     break
 
             nonce_bin = struct.pack(">I", i)
@@ -156,6 +164,8 @@ class Worker(object):
                 break
             elif val < THRESH*10:
                 print "almost: %d (<%d)" % (val, THRESH)
+            # elif i == 0:
+                # print hash_bin.encode("hex")
         self._done_ev.set()
 
 if __name__ == "__main__":
