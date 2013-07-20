@@ -74,7 +74,7 @@ class JobInfo(object):
         assert val < THRESH
 
 class StratumClient(object):
-    def __init__(self, f):
+    def __init__(self, f, worker_cls):
         self.mid = 3
         self.done = False
 
@@ -85,6 +85,7 @@ class StratumClient(object):
 
         self.w = None
         self.jobs = RecentCache(n=1000)
+        self.worker_cls = worker_cls
 
     def run(self):
         while True:
@@ -146,7 +147,7 @@ class StratumClient(object):
                 preheader_bin = preheader.decode("hex")
                 preheader_bin = ''.join([preheader_bin[i*4:i*4+4][::-1] for i in range(0,19)])
 
-                self.w = CpuWorker(self)
+                self.w = self.worker_cls(self)
                 self.w.start(j.id, extranonce2, ntime, preheader_bin)
 
             else:
@@ -230,10 +231,64 @@ class CpuWorker(WorkerBase):
             traceback.print_exc()
             os._exit(1)
 
+class FPGAWorker(WorkerBase):
+    def _target(self, job_id, extranonce2, ntime, preheader_bin):
+        try:
+            start = time.time()
+
+            X, Y = sha.precalc(preheader_bin)
+
+            if sys.maxint > 2**32:
+                max_nonce = 2**32
+            else:
+                max_nonce = 2**31 - 1
+            i = 0
+            while i < max_nonce:
+                if i % 1000 == 0:
+                    print i, "%.1f kh/s" % (i * .001 / (time.time() - start + .001))
+                    if self._quit:
+                        print "QUITTING WORKER"
+                        break
+
+                nonce_bin = struct.pack(">I", i)
+                if TEST:
+                    nonce_bin = "b2957c02".decode("hex")[::-1]
+
+                # header_bin = preheader_bin + nonce_bin
+                # hash_bin = doublesha(header_bin)
+                # assert hash_bin == finish_dsha(first_sha, nonce_bin)
+                hash_bin = sha.finish_dsha(X, Y, nonce_bin)
+
+                val = struct.unpack("<I", hash_bin[-4:])[0]
+                if val < THRESH:
+                    nonce = nonce_bin[::-1].encode("hex")
+                    print nonce, extranonce2, ntime
+                    print hash_bin.encode("hex")
+                    hash_int = uint256_from_str(hash_bin)
+                    block_hash_hex = "%064x" % hash_int
+                    print block_hash_hex
+
+
+                    self._cl.submit(job_id, extranonce2, ntime, nonce)
+                    break
+                elif val < THRESH*10:
+                    print "almost: %d (<%d)" % (val, THRESH)
+                i += 1
+                # elif i == 0:
+                    # print hash_bin.encode("hex")
+            self._done_ev.set()
+        except:
+            traceback.print_exc()
+            os._exit(1)
+
 if __name__ == "__main__":
     sock = socket.socket()
     sock.connect(("stratum.btcguild.com", 3333))
 
+    worker_cls = CpuWorker
+    if len(sys.argv) >= 2:
+        if sys.argv[1] == "fpga":
+            worker_cls = FPGAWorker
 
-    StratumClient(sock.makefile()).run()
+    StratumClient(sock.makefile(), worker_cls).run()
     f = sock.makefile()

@@ -12,6 +12,21 @@ k = [
    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
    ]
 
+def precalc(preheader_bin):
+    assert len(preheader_bin) == 76, len(preheader_bin)
+    V = list(H)
+    chunk(preheader_bin[:64], V)
+    return V, preheader_bin[64:]
+
+def finish_dsha(X, Y, nonce):
+    V = list(X)
+    chunk(Y + nonce + "\x80" + "\x00" * 45 + '\x02\x80', V)
+    digest = struct.pack(">IIIIIIII", *V)
+    V = list(H)
+    chunk(digest + "\x80" + "\x00" * 29 + "\x01\x00", V)
+    digest = struct.pack(">IIIIIIII", *V)
+    return digest
+
 def sha256(m):
     assert len(m) <= 2**32
     npad = (64 - 1 - 4 - len(m))
