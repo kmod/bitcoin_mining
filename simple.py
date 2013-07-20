@@ -122,7 +122,9 @@ class StratumClient(object):
 
     def submit(self, job_id, extranonce2, ntime, nonce):
         print "SUBMITTING"
-        self.f.write("""{"params": ["kmod_3", "%s", "%s", "%s", "%s"], "id": %d, "method":"mining.submit"}\n""" % (job_id, extranonce2, ntime, nonce, self.mid))
+        cmd = """{"params": ["kmod_3", "%s", "%s", "%s", "%s"], "id": %d, "method":"mining.submit"}\n""" % (job_id, extranonce2, ntime, nonce, self.mid)
+        print cmd
+        self.f.write(cmd)
         self.f.flush()
         self.mid += 1
         self.done = True
@@ -171,7 +173,7 @@ class Worker(object):
 
                 val = struct.unpack("<I", hash_bin[-4:])[0]
                 if val < THRESH:
-                    nonce = nonce_bin.encode("hex")
+                    nonce = nonce_bin[::-1].encode("hex")
                     print nonce, extranonce2, ntime
                     print hash_bin.encode("hex")
                     hash_int = uint256_from_str(hash_bin)
