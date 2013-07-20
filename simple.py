@@ -16,14 +16,16 @@ TEST = 0
 THRESH = 1
 
 from util import RecentCache
+import sha
 
 def doublesha(d):
     return hashlib.sha256(hashlib.sha256(d).digest()).digest()
 
-def finish_dsha(sha, end):
-    sha = sha.copy()
-    sha.update(end)
-    return hashlib.sha256(sha.digest()).digest()
+def finish_dsha(sha_obj, end):
+    sha_obj = sha_obj.copy()
+    sha_obj.update(end)
+    # return sha.sha256(sha_obj.digest())
+    return hashlib.sha256(sha_obj.digest()).digest()
 
 def build_merkle_root(merkle_branch, coinbase_hash_bin):
     merkle_root = coinbase_hash_bin
@@ -163,7 +165,7 @@ class StratumClient(object):
         self.mid += 1
         self.done = True
 
-class CpuWorker(object):
+class WorkerBase(object):
     def __init__(self, cl):
         self._cl = cl
         self._quit = False
@@ -178,6 +180,7 @@ class CpuWorker(object):
         self._quit = True
         self._done_ev.wait()
 
+class CpuWorker(WorkerBase):
     def _target(self, job_id, extranonce2, ntime, preheader_bin):
         try:
             start = time.time()
