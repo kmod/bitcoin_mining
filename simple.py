@@ -15,6 +15,8 @@ import traceback
 TEST = 0
 THRESH = 1
 
+from util import RecentCache
+
 def doublesha(d):
     return hashlib.sha256(hashlib.sha256(d).digest()).digest()
 
@@ -43,6 +45,32 @@ def ser_uint256_be(u):
         u >>= 32
     return rs    
 
+class JobInfo(object):
+    def __init__(self, extranonce1, id, prevhash, coinb1, coinb2, merkle_branch, version, nbits, ntime):
+        self.extranonce1 = extranonce1
+        self.id = id
+        self.prevhash = prevhash
+        self.coinb1 = coinb1
+        self.coinb2 = coinb2
+        self.merkle_branch = merkle_branch
+        self.version = version
+        self.nbits = nbits
+        self.ntime = ntime
+
+    def verify(self, extranonce2, ntime, nonce):
+        coinbase = self.coinb1 + self.extranonce1 + extranonce2 + self.coinb2
+        coinbase_hash_bin = doublesha(binascii.unhexlify(coinbase))
+        merkle_root = build_merkle_root(self.merkle_branch, coinbase_hash_bin)
+        merkle_root = ser_uint256_be(uint256_from_str(merkle_root))
+        preheader = self.version + self.prevhash + merkle_root.encode("hex") + ntime + self.nbits
+        preheader_bin = preheader.decode("hex")
+        preheader_bin = ''.join([preheader_bin[i*4:i*4+4][::-1] for i in range(0,19)])
+
+        hash_bin = doublesha(preheader_bin + nonce.decode("hex")[::-1])
+        print hash_bin.encode("hex")
+        val = struct.unpack("<I", hash_bin[-4:])[0]
+        assert val < THRESH
+
 class StratumClient(object):
     def __init__(self, f):
         self.mid = 3
@@ -54,6 +82,7 @@ class StratumClient(object):
         self.f.flush()
 
         self.w = None
+        self.jobs = RecentCache(n=1000)
 
     def run(self):
         while True:
@@ -81,7 +110,7 @@ class StratumClient(object):
                 raise Exception()
 
             if d['id'] == 1 and 'method' not in d:
-                job_id, extranonce1, extranonce2_size = d['result']
+                subscription, extranonce1, extranonce2_size = d['result']
 
             elif d.get('method', None) == "mining.set_difficulty":
                 assert d['params'] == [1]
@@ -91,8 +120,9 @@ class StratumClient(object):
                     print "stopping existing worker"
                     self.w.stop()
 
-                params = dict(zip(["job_id", "prevhash", "coinb1", "coinb2", "merkle_branch", "version", "nbits", "ntime", "clean_jobs"], d['params']))
-                # print params
+                params, clean_jobs = d['params'][:-1], d['params'][:-1]
+                j = JobInfo(extranonce1, *params)
+                self.jobs[j.id] = j
 
                 extranonce2 = ((int(time.time()) << 16) + os.getpid()) & 0xffffffff
                 extranonce2 = struct.pack(">I", extranonce2).encode("hex")
@@ -100,22 +130,22 @@ class StratumClient(object):
                     extranonce2 = "00000001"
                 print extranonce2
 
-                coinbase = params['coinb1'] + extranonce1 + extranonce2 + params['coinb2']
+                coinbase = j.coinb1 + extranonce1 + extranonce2 + j.coinb2
                 coinbase_hash_bin = doublesha(binascii.unhexlify(coinbase))
-                merkle_root = build_merkle_root(params["merkle_branch"], coinbase_hash_bin)
+                merkle_root = build_merkle_root(j.merkle_branch, coinbase_hash_bin)
                 merkle_root = ser_uint256_be(uint256_from_str(merkle_root))
 
                 # ntime = "504e86ed"
-                ntime = params['ntime']
+                ntime = j.ntime
                 if TEST:
                     ntime = "504e86ed"
 
-                preheader = params['version'] + params['prevhash'] + merkle_root.encode("hex") + ntime + params['nbits']
+                preheader = j.version + j.prevhash + merkle_root.encode("hex") + ntime + j.nbits
                 preheader_bin = preheader.decode("hex")
                 preheader_bin = ''.join([preheader_bin[i*4:i*4+4][::-1] for i in range(0,19)])
 
-                self.w = Worker(self)
-                self.w.start(params['job_id'], extranonce2, ntime, preheader_bin)
+                self.w = CpuWorker(self)
+                self.w.start(j.id, extranonce2, ntime, preheader_bin)
 
             else:
                 assert d['id'] < self.mid
@@ -124,12 +154,16 @@ class StratumClient(object):
         print "SUBMITTING"
         cmd = """{"params": ["kmod_3", "%s", "%s", "%s", "%s"], "id": %d, "method":"mining.submit"}\n""" % (job_id, extranonce2, ntime, nonce, self.mid)
         print cmd
+        j = self.jobs[job_id]
+
+        j.verify(extranonce2, ntime, nonce)
+
         self.f.write(cmd)
         self.f.flush()
         self.mid += 1
         self.done = True
 
-class Worker(object):
+class CpuWorker(object):
     def __init__(self, cl):
         self._cl = cl
         self._quit = False
