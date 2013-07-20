@@ -1,1 +1,11 @@
 *.pyc
+
+fpga/*
+!fpga/*.v
+!fpga/*.ucf
+!fpga/*.xise
+!fpga/ipcore_dir
+!fpga/ipcore_dir/*
+!fpga/ipcore_dir/*/*
+ifpga/pcore_dir/_xmsgs
+ifpga/pcore_dir/tmp
