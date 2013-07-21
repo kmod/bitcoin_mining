@@ -116,12 +116,13 @@ module dsha_finisher(input wire clk, input wire [255:0] X, input wire [95:0] Y, 
 	wire valid2;
 	assign accepted = valid2;
 	
-	reg [31:0] nonce1;
+	reg [31:0] nonce1, nonce2;
 	always @(posedge clk) begin
 		if (valid2) begin
 			hash <= hash2;
 			nonce1 <= in_nonce;
-			out_nonce <= nonce1;
+			nonce2 <= nonce1;
+			out_nonce <= nonce2;
 		end
 	end
 endmodule

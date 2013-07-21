@@ -20,15 +20,15 @@ def precalc(preheader_bin):
 
 def finish_dsha(X, Y, nonce):
     V = list(X)
-    print "doing finish_dsha"
+    # print "doing finish_dsha"
     chunk(Y + nonce + "\x80" + "\x00" * 45 + '\x02\x80', V)
     digest1 = struct.pack(">IIIIIIII", *V)
-    print hex(X[0])
+    # print hex(X[0])
     V = list(H)
-    print "doing second of finish_dsha"
+    # print "doing second of finish_dsha"
     chunk(digest1 + "\x80" + "\x00" * 29 + "\x01\x00", V)
     digest2 = struct.pack(">IIIIIIII", *V)
-    print repr((X, Y, nonce))
+    # print repr((X, Y, nonce))
     # raise Exception(struct.pack(">IIIIIIII", *X[::-1]).encode("hex"), Y[::-1].encode("hex"), nonce[::-1].encode("hex"), digest1[::-1].encode("hex"), digest2[::-1].encode("hex"))
     return digest2
 
@@ -87,7 +87,7 @@ def chunk(m, V):
         b = a
         a = (temp1 + temp2) & 0xffffffff
 
-        if 1:
+        if 0:
             print "%08x %08x %08x %08x %08x %08x %08x %08x" % (a, b, c, d, e, f, g, h),
             print "| %08x %08x %08x %08x %08x %08x %08x %08x" % (s1, ch, temp1, s0, maj, temp2, k[i], w[i])
 

@@ -69,7 +69,7 @@ module fpga(
 	assign uart_tx_data[295:264] = out_nonce;
 	assign uart_tx_data[303:296] = 8'haa;
 	assign uart_tx_data[511:448] = 64'hdead432987beefaa;
-	assign uart_tx_req = (out_hash[255:224+8] == 0);
+	assign uart_tx_req = (out_hash[255:224+16] == 0);
 	uart_multibyte_transmitter #(.CLK_CYCLES(87), .MSG_LOG_WIDTH(6)) uart_mbtx(.clk(clk), .data(uart_tx_data), .req(uart_tx_req), .uart_tx(RsTx));
 	
 	// Input synchronizer:
@@ -87,6 +87,10 @@ module fpga(
 	
 	reg [31:0] in_nonce = 32'hb2957c02;
 	wire dsha_accepted;
+	
+	always @(posedge clk) begin
+		if (dsha_accepted) in_nonce <= in_nonce + 1;
+	end
 	
 	uart_multibyte_receiver #(.CLK_CYCLES(87), .MSG_LOG_WIDTH(6)) uart_mbrx(.clk(clk), .data(uart_rx_data), .valid(uart_rx_valid), .ack(1'b0), .uart_rx(RsRx2));
 	
