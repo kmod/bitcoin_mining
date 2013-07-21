@@ -92,17 +92,17 @@ module karray(
 	end
 endmodule
 
-module dsha_finisher(input wire clk, input wire [255:0] X, input wire [95:0] Y, input wire [31:0] in_nonce, output reg [255:0] hash, output wire [31:0] out_nonce);
+module dsha_finisher(input wire clk, input wire [255:0] X, input wire [95:0] Y, input wire [31:0] in_nonce, output reg [255:0] hash, output reg [31:0] out_nonce, output wire accepted);
 	wire [511:0] data1;
 	assign data1[95:0] = Y;
 	assign data1[127:96] = in_nonce;
 	assign data1[135:128] = 8'h80;
 	assign data1[495:136] = 0;
 	assign data1[511:496] = 16'h8002;
-	wire valid1;
 	
 	sha256_chunk chunk1(.clk(clk), .data(data1), .V_in(X), .hash(hash1), .valid(valid1));
 	
+	wire valid1;
 	wire [255:0] hash1;
 	wire [511:0] data2;
 	assign data2[255:0] = hash1;
@@ -113,8 +113,16 @@ module dsha_finisher(input wire clk, input wire [255:0] X, input wire [95:0] Y, 
 	sha256_chunk chunk2(.clk(clk), .data(data2), .V_in(256'h5be0cd191f83d9ab9b05688c510e527fa54ff53a3c6ef372bb67ae856a09e667), .hash(hash2), .valid(valid2));
 	
 	wire [255:0] hash2;
+	wire valid2;
+	assign accepted = valid2;
+	
+	reg [31:0] nonce1;
 	always @(posedge clk) begin
-		if (valid2) hash = hash2;
+		if (valid2) begin
+			hash <= hash2;
+			nonce1 <= in_nonce;
+			out_nonce <= nonce1;
+		end
 	end
 endmodule
 

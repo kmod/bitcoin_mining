@@ -28,7 +28,9 @@ def finish_dsha(X, Y, nonce):
     print "doing second of finish_dsha"
     chunk(digest1 + "\x80" + "\x00" * 29 + "\x01\x00", V)
     digest2 = struct.pack(">IIIIIIII", *V)
-    raise Exception(struct.pack(">IIIIIIII", *X[::-1]).encode("hex"), Y[::-1].encode("hex"), nonce[::-1].encode("hex"), digest1[::-1].encode("hex"), digest2[::-1].encode("hex"))
+    print repr((X, Y, nonce))
+    # raise Exception(struct.pack(">IIIIIIII", *X[::-1]).encode("hex"), Y[::-1].encode("hex"), nonce[::-1].encode("hex"), digest1[::-1].encode("hex"), digest2[::-1].encode("hex"))
+    return digest2
 
 def sha256(m):
     assert len(m) <= 2**32

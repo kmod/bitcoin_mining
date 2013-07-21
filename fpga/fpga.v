@@ -33,7 +33,7 @@ module fpga(
 	wire clk; // 10MHz clock
 	dcm dcm(.CLK_IN(input_clk), .CLK_OUT(clk)); // 100MHz -> 10MHz DCM
 
-	//assign led = sw;
+	assign led = sw;
 	
 	// button synchronizer:
 	reg [4:0] btn_sync, btn_sync2;
@@ -49,10 +49,11 @@ module fpga(
 		end
 	endgenerate
 	
-	reg [15:0] ctr;
 	reg [4:0] btn_prev;
 	
-	sseg #(.N(16)) sseg(.clk(clk), .in(ctr), .c(seg), .an(an));
+	wire [15:0] sseg_data;
+	assign sseg_data = uart_rx_data[15:0];
+	sseg #(.N(16)) sseg(.clk(clk), .in(sseg_data), .c(seg), .an(an));
 	
 	
 	/*
@@ -62,31 +63,40 @@ module fpga(
 	*/
 	
 	wire uart_tx_req, uart_tx_ready;
-	
-	wire [31:0] uart_rx_data;
-	wire uart_rx_valid;
-	assign uart_tx_req = uart_rx_valid;
-	uart_multibyte_transmitter #(.CLK_CYCLES(87), .MSG_LOG_WIDTH(2)) uart_mbtx(.clk(clk), .data(uart_rx_data), .req(uart_tx_req), .uart_tx(RsTx));
+	wire [511:0] uart_tx_data;
+	assign uart_tx_data[255:0] = out_hash;
+	assign uart_tx_data[263:256] = 8'haa;
+	assign uart_tx_data[295:264] = out_nonce;
+	assign uart_tx_data[303:296] = 8'haa;
+	assign uart_tx_data[511:448] = 64'hdead432987beefaa;
+	assign uart_tx_req = (out_hash[255:224+8] == 0);
+	uart_multibyte_transmitter #(.CLK_CYCLES(87), .MSG_LOG_WIDTH(6)) uart_mbtx(.clk(clk), .data(uart_tx_data), .req(uart_tx_req), .uart_tx(RsTx));
 	
 	// Input synchronizer:
 	reg RsRx1=1, RsRx2=1;
 	always @(posedge clk) begin
 		{RsRx1, RsRx2} <= {RsRx, RsRx1};
 	end
-	uart_multibyte_receiver #(.CLK_CYCLES(87), .MSG_LOG_WIDTH(2)) uart_mbrx(.clk(clk), .data(uart_rx_data), .valid(uart_rx_valid), .ack(1'b1), .uart_rx(RsRx2));
+	wire uart_rx_valid;
+	wire [511:0] uart_rx_data;
+	wire [255:0] X;
+	wire [95:0] Y;
+	assign X = uart_rx_data[255:0]; // ex 256'h356d66244c73b9f1e1a328b2c6615412a965a72218c5c19eb5c5d4073db86a04
+	assign Y = uart_rx_data[351:256]; // ex 96'h1c2ac4af504e86edec9d69b1
+	//assign nonce = uart_rx_data[383:352]; // ex 32'hb2957c02
 	
+	reg [31:0] in_nonce = 32'hb2957c02;
+	wire dsha_accepted;
 	
+	uart_multibyte_receiver #(.CLK_CYCLES(87), .MSG_LOG_WIDTH(6)) uart_mbrx(.clk(clk), .data(uart_rx_data), .valid(uart_rx_valid), .ack(1'b0), .uart_rx(RsRx2));
+	
+	wire [255:0] out_hash;
+	wire [31:0] out_nonce;
+	dsha_finisher dsha(.clk(clk), .X(X), .Y(Y), .in_nonce(in_nonce), .hash(out_hash), .out_nonce(out_nonce), .accepted(dsha_accepted));
 	
 	
 	
 	always @(posedge clk) begin
-		if (btn_debounced[0] && !btn_prev[0]) ctr <= ctr + 1'b1;
-		if (btn_debounced[2] && !btn_prev[2]) ctr <= 0;
-		
-		if (uart_rx_valid) begin
-			ctr <= uart_rx_data[15:0];
-		end
-		
 		btn_prev <= btn_debounced;
 	end
 endmodule
