@@ -33,6 +33,7 @@ def sha256(m):
     npad = npad - 64 * (npad/64)
     assert npad >= 0
     m = m + '\x80' + '\x00' * npad + struct.pack(">I", len(m) * 8)
+    # print repr(m)
     assert len(m) % 64 == 0, len(m)
 
     V = list(H)
@@ -60,6 +61,8 @@ def chunk(m, V):
         t = (w[i-16] + s0 + w[i-7] + s1) & 0xffffffff
         w.append(t)
 
+        # print "%08x %08x %08x %08x %08x" % (s0, s1, w[i-16], w[i-7], t)
+
 
     a,b,c,d,e,f,g,h = V
     for i in xrange(0, 64):
@@ -79,7 +82,9 @@ def chunk(m, V):
         b = a
         a = (temp1 + temp2) & 0xffffffff
 
-        # print "%08x %08x %08x %08x %08x %08x %08x %08x" % (a, b, c, d, e, f, g, h)
+        if 0:
+            print "%08x %08x %08x %08x %08x %08x %08x %08x" % (a, b, c, d, e, f, g, h),
+            print "| %08x %08x %08x %08x %08x %08x %08x %08x" % (s1, ch, temp1, s0, maj, temp2, k[i], w[i])
 
     V[0] = (V[0] + a) & 0xffffffff
     V[1] = (V[1] + b) & 0xffffffff
@@ -99,3 +104,9 @@ if __name__ == "__main__":
     _test("abc")
     _test("abc" * 30)
 
+
+# for i in xrange(64):
+    # b = bin(i)[2:].rjust(6, '0')
+    # h = hex(k[i])[2:].rjust(8, '0')
+    # print "case 6'b%s: k = 32'h%s;" % (b, h)
+# print ''.join([hex(x)[2:] for x in reversed(H)])
