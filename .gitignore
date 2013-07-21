@@ -4,6 +4,8 @@ fpga/*
 !fpga/*.v
 !fpga/*.ucf
 !fpga/*.xise
+!fpga/src
+!fpga/test
 !fpga/ipcore_dir
 !fpga/ipcore_dir/*
 !fpga/ipcore_dir/*/*

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="C:/Dropbox/xilinx/processor/sha_chunk_test_isim_beh.wdb" id="1" type="auto">
+         <top_modules>
+            <top_module name="glbl" />
+            <top_module name="sha_chunk_test" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <WVObjectSize size="2" />
+   <wvobject fp_name="group11" type="group">
+      <obj_property name="label">tester</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/sha_chunk_test/hash" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">hash[255:0]</obj_property>
+         <obj_property name="ObjectShortName">hash[255:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/sha_chunk_test/data" type="array" db_ref_id="1">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">data[511:0]</obj_property>
+         <obj_property name="ObjectShortName">data[511:0]</obj_property>
+         <obj_property name="label">data[511:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/sha_chunk_test/V_in" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">V_in[255:0]</obj_property>
+         <obj_property name="ObjectShortName">V_in[255:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/sha_chunk_test/clk" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">clk</obj_property>
+         <obj_property name="ObjectShortName">clk</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group13" type="group">
+      <obj_property name="label">chunker</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/sha_chunk_test/uut/roundnum" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">roundnum[5:0]</obj_property>
+         <obj_property name="ObjectShortName">roundnum[5:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/sha_chunk_test/uut/R" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">R[7:0,31:0]</obj_property>
+         <obj_property name="ObjectShortName">R[7:0,31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/sha_chunk_test/uut/nR" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">nR[7:0,31:0]</obj_property>
+         <obj_property name="ObjectShortName">nR[7:0,31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/sha_chunk_test/uut/S1" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">S1[31:0]</obj_property>
+         <obj_property name="ObjectShortName">S1[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/sha_chunk_test/uut/ch" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">ch[31:0]</obj_property>
+         <obj_property name="ObjectShortName">ch[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/sha_chunk_test/uut/temp1" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">temp1[31:0]</obj_property>
+         <obj_property name="ObjectShortName">temp1[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/sha_chunk_test/uut/S0" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">S0[31:0]</obj_property>
+         <obj_property name="ObjectShortName">S0[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/sha_chunk_test/uut/maj" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">maj[31:0]</obj_property>
+         <obj_property name="ObjectShortName">maj[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/sha_chunk_test/uut/temp2" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">temp2[31:0]</obj_property>
+         <obj_property name="ObjectShortName">temp2[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/sha_chunk_test/uut/k" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">k[31:0]</obj_property>
+         <obj_property name="ObjectShortName">k[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/sha_chunk_test/uut/w[0]" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">[0,31:0]</obj_property>
+         <obj_property name="ObjectShortName">w[0,31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/sha_chunk_test/uut/w" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">w[15:0,31:0]</obj_property>
+         <obj_property name="ObjectShortName">w[15:0,31:0]</obj_property>
+      </wvobject>
+   </wvobject>
+</wave_config>
