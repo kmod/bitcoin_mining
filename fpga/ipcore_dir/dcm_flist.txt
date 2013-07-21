@@ -1,14 +1,13 @@
 # Output products list for <dcm>
 _xmsgs\pn_parser.xmsgs
 dcm.asy
-dcm.ejp
 dcm.gise
+dcm.sym
 dcm.ucf
 dcm.v
 dcm.veo
 dcm.xco
 dcm.xdc
-dcm.xise
 dcm\clk_wiz_v3_6_readme.txt
 dcm\doc\clk_wiz_v3_6_readme.txt
 dcm\doc\clk_wiz_v3_6_vinfo.html

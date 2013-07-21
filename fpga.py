@@ -77,6 +77,7 @@ class FPGAController(object):
     def winning_nonces_gen(self, _X, Y):
         while True:
             while self.last_msg is None:
+                yield None
                 time.sleep(.01)
             m = self.last_msg
             self.last_msg = None

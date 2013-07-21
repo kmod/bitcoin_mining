@@ -1,6 +1,8 @@
 INFO:sim:172 - Generating IP...
 Applying current project options...
 Finished applying current project options.
+WARNING:sim - A core named 'dcm' already exists in the project. Output products
+   for this core may be overwritten.
 Resolving generics for 'dcm'...
 WARNING:sim - A core named 'dcm' already exists in the project. Output products
    for this core may be overwritten.
@@ -9,10 +11,8 @@ Delivering associated files for 'dcm'...
 WARNING:sim - Component clk_wiz_v3_6 does not have a valid model name for
    Verilog synthesis
 Delivering EJava files for 'dcm'...
-Delivered 3 files into directory
-C:/Dropbox/xilinx/processor/ipcore_dir/tmp/_cg/dcm
-Delivered 1 file into directory
-C:/Dropbox/xilinx/processor/ipcore_dir/tmp/_cg/dcm
+Delivered 3 files into directory C:/Dropbox/bc/fpga/ipcore_dir/tmp/_cg/dcm
+Delivered 1 file into directory C:/Dropbox/bc/fpga/ipcore_dir/tmp/_cg/dcm
 Generating ASY schematic symbol...
 Loading device for application Rf_Device from file '6slx16.nph' in environment
 E:\Xilinx\14.6\ISE_DS\ISE\.
@@ -21,25 +21,49 @@ Generating SYM schematic symbol for 'dcm'...
 Generating ISE project...
 XCO file found: dcm.xco
 XMDF file found: dcm_xmdf.tcl
-Adding C:/Dropbox/xilinx/processor/ipcore_dir/tmp/_cg/dcm.asy -view all
--origin_type imported
-Adding C:/Dropbox/xilinx/processor/ipcore_dir/tmp/_cg/dcm.ucf -view all
--origin_type created
-Adding C:/Dropbox/xilinx/processor/ipcore_dir/tmp/_cg/dcm.v -view all
--origin_type created
+Adding C:/Dropbox/bc/fpga/ipcore_dir/tmp/_cg/dcm.asy -view all -origin_type
+imported
+Adding C:/Dropbox/bc/fpga/ipcore_dir/tmp/_cg/dcm.ucf -view all -origin_type
+created
+Adding C:/Dropbox/bc/fpga/ipcore_dir/tmp/_cg/dcm.v -view all -origin_type
+created
 INFO:HDLCompiler:1845 - Analyzing Verilog file
-   "C:/Dropbox/xilinx/processor/ipcore_dir/tmp/_cg/dcm.v" into library work
+   "C:/Dropbox/bc/fpga/ipcore_dir/tmp/_cg/dcm.v" into library work
 INFO:ProjectMgmt - Parsing design hierarchy completed successfully.
-Adding C:/Dropbox/xilinx/processor/ipcore_dir/tmp/_cg/dcm.veo -view all
--origin_type imported
+Adding C:/Dropbox/bc/fpga/ipcore_dir/tmp/_cg/dcm.veo -view all -origin_type
+imported
 INFO:TclTasksC:2116 - The automatic calculation of top has been turned-off.
    Please set the new top explicitly by running the "project set top" command.
    To re-calculate the new top automatically, set the "Auto Implementation Top"
    property to true.
 Top level has been set to "/dcm"
+WARNING:coreutil - WARNING:TclTasksC:project_006: Exception detected while
+   executing [project set].
+   Type [help project set] for more information.
+
+       while executing
+   "project set {Implementation Stop View} PreSynthesis   "
+       (procedure "core2ise" line 82)
+       invoked from within
+   "core2ise $corename"
+       invoked from within
+   "if {[info exists argc]} {
+      if {$argc==1} {
+         set corename [lindex $argv 0]
+         core2ise $corename
+      } elseif {$argc==2} {
+         set corepath ..."
+       (file "E:\Xilinx\14.6\ISE_DS\ISE\coregen\tcl\core2ise.tcl" line 250)
+ERROR:coreutil:1012 - Command
+   'E:\Xilinx\14.6\ISE_DS\ISE\bin\nt64\unwrapped\xtclsh.exe
+   "E:\Xilinx\14.6\ISE_DS\ISE\coregen\tcl\core2ise.tcl" "./tmp/_cg/" "dcm" '
+   returned a non-zero exit code '1'
+WARNING:sim:968 - ISE project './tmp/_cg/dcm.xise' will not be released.
+WARNING:sim - ISE file could not be generated.
 Generating README file...
 Generating FLIST file...
 INFO:sim:948 - Finished FLIST file generation.
+Launching README viewer...
 Moving files to output directory...
 Finished moving files to output directory
 Wrote CGP file for project 'dcm'.

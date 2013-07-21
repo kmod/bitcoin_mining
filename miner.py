@@ -245,11 +245,13 @@ class FPGAWorker(WorkerBase):
             self.scl.start_dsha(X, Y)
 
             for nonce_bin in self.scl.winning_nonces_gen(X, Y):
+                if self._quit:
+                    break
+                if nonce_bin is None:
+                    continue
                 nonce = nonce_bin.encode("hex")
                 self._cl.submit(job_id, extranonce2, ntime, nonce)
 
-                if self.quit:
-                    break
             self._done_ev.set()
         except:
             traceback.print_exc()

@@ -55,7 +55,7 @@
 // "Output    Output      Phase     Duty      Pk-to-Pk        Phase"
 // "Clock    Freq (MHz) (degrees) Cycle (%) Jitter (ps)  Error (ps)"
 //----------------------------------------------------------------------------
-// CLK_OUT1____10.000______0.000______50.0_____2200.000____150.000
+// CLK_OUT1____80.000______0.000______50.0______450.000____150.000
 //
 //----------------------------------------------------------------------------
 // "Input Clock   Freq (MHz)    Input Jitter (UI)"
@@ -86,16 +86,16 @@ module dcm
   //    * Unused inputs are tied off
   //    * Unused outputs are labeled unused
   wire        psdone_unused;
-  //wire        locked_int;
-  //wire [7:0]  status_int;
+  wire        locked_int;
+  wire [7:0]  status_int;
   wire clkfb;
   wire clk0;
   wire clkfx;
 
   DCM_SP
-  #(.CLKDV_DIVIDE          (10.000),
-    .CLKFX_DIVIDE          (20),
-    .CLKFX_MULTIPLY        (2),
+  #(.CLKDV_DIVIDE          (2.000),
+    .CLKFX_DIVIDE          (5),
+    .CLKFX_MULTIPLY        (4),
     .CLKIN_DIVIDE_BY_2     ("FALSE"),
     .CLKIN_PERIOD          (10.0),
     .CLKOUT_PHASE_SHIFT    ("NONE"),
@@ -123,8 +123,8 @@ module dcm
     .PSINCDEC              (1'b0),
     .PSDONE                (),
     // Other control and status signals
-    .LOCKED                (),
-    .STATUS                (),
+    .LOCKED                (locked_int),
+    .STATUS                (status_int),
     .RST                   (1'b0),
     // Unused pin- tie low
     .DSSEN                 (1'b0));
