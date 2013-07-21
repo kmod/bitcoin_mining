@@ -75,42 +75,43 @@ class FPGAController(object):
         self.last_msg = None
 
     def winning_nonces_gen(self, _X, Y):
-        prev_msg = None
         while True:
-            while self.last_msg == prev_msg:
+            while self.last_msg is None:
                 time.sleep(.01)
-
             m = self.last_msg
+            self.last_msg = None
+
             digest = m[:32]
             assert m[32] == '\xaa'
             nonce = m[33:37]
-            print "received nonce: %s" % (nonce.encode("hex"),)
+            print "raw nonce: %s" % (nonce.encode("hex"),)
             assert m[37] == '\xaa'
             real_digest = sha.finish_dsha(_X, Y, nonce)
+            print "gives digest: %s" % (digest.encode("hex"),)
             assert digest == real_digest, (digest.encode("hex"), real_digest.encode("hex"))
-            print digest.encode("hex")
             assert digest.endswith("\x00\x00")
-            yield nonce
+            yield nonce[::-1]
 
             prev_msg = m
 
-c = FPGAController()
+if __name__ == "__main__":
+    c = FPGAController()
 
-X, Y, nonce = ([1035495940, 3049640967, 415613342, 2842011426, 3328267282, 3785566386, 1282652657, 896362020], '\xb1i\x9d\xec\xed\x86NP\xaf\xc4*\x1c', '\x02|\x95\xb2')
+    X, Y, nonce = ([1035495940, 3049640967, 415613342, 2842011426, 3328267282, 3785566386, 1282652657, 896362020], '\xb1i\x9d\xec\xed\x86NP\xaf\xc4*\x1c', '\x02|\x95\xb2')
 
-"""
-digest = '32e4b6f2825ab10b227532466880f2f658e19d0c2824e069ff3f81b3cc090000'.decode("hex")
-reported_nonce = 'Y\x1f\xbb\xb4'
-_i = struct.unpack("<I", reported_nonce)[0]
-for i in xrange(_i-100, _i+100):
-    d = sha.finish_dsha(X, Y, struct.pack("<I", i)).encode("hex")
-    if d.endswith("0000"):
-        raise Exception(d)
-1/0
-"""
+    """
+    digest = '32e4b6f2825ab10b227532466880f2f658e19d0c2824e069ff3f81b3cc090000'.decode("hex")
+    reported_nonce = 'Y\x1f\xbb\xb4'
+    _i = struct.unpack("<I", reported_nonce)[0]
+    for i in xrange(_i-100, _i+100):
+        d = sha.finish_dsha(X, Y, struct.pack("<I", i)).encode("hex")
+        if d.endswith("0000"):
+            raise Exception(d)
+    1/0
+    """
 
-# print sha.finish_dsha(X, Y, nonce).encode("hex")
-# print c.finish_dsha(X, Y, nonce).encode("hex")
-c.start_dsha(X, Y)
-for nonce in c.winning_nonces_gen(X, Y):
-    print nonce[::-1].encode("hex")
+    # print sha.finish_dsha(X, Y, nonce).encode("hex")
+    # print c.finish_dsha(X, Y, nonce).encode("hex")
+    c.start_dsha(X, Y)
+    for nonce in c.winning_nonces_gen(X, Y):
+        print nonce.encode("hex")

@@ -12,11 +12,12 @@ import sys
 import time
 import traceback
 
-TEST = 1
+TEST = 0
 THRESH = 1
 
 from util import RecentCache
 import sha
+import fpga
 
 def doublesha(d):
     return hashlib.sha256(hashlib.sha256(d).digest()).digest()
@@ -71,7 +72,7 @@ class JobInfo(object):
         hash_bin = doublesha(preheader_bin + nonce.decode("hex")[::-1])
         print hash_bin.encode("hex")
         val = struct.unpack("<I", hash_bin[-4:])[0]
-        assert val < THRESH
+        assert val < THRESH, (val, THRESH)
 
 class StratumClient(object):
     def __init__(self, f, worker_cls):
@@ -232,50 +233,23 @@ class CpuWorker(WorkerBase):
             os._exit(1)
 
 class FPGAWorker(WorkerBase):
+    def __init__(self, cl):
+        super(FPGAWorker, self).__init__(cl)
+
+        self.scl = fpga.FPGAController()
+
     def _target(self, job_id, extranonce2, ntime, preheader_bin):
         try:
-            start = time.time()
-
             X, Y = sha.precalc(preheader_bin)
 
-            if sys.maxint > 2**32:
-                max_nonce = 2**32
-            else:
-                max_nonce = 2**31 - 1
-            i = 0
-            while i < max_nonce:
-                if i % 1000 == 0:
-                    print i, "%.1f kh/s" % (i * .001 / (time.time() - start + .001))
-                    if self._quit:
-                        print "QUITTING WORKER"
-                        break
+            self.scl.start_dsha(X, Y)
 
-                nonce_bin = struct.pack(">I", i)
-                if TEST:
-                    nonce_bin = "b2957c02".decode("hex")[::-1]
+            for nonce_bin in self.scl.winning_nonces_gen(X, Y):
+                nonce = nonce_bin.encode("hex")
+                self._cl.submit(job_id, extranonce2, ntime, nonce)
 
-                # header_bin = preheader_bin + nonce_bin
-                # hash_bin = doublesha(header_bin)
-                # assert hash_bin == finish_dsha(first_sha, nonce_bin)
-                hash_bin = sha.finish_dsha(X, Y, nonce_bin)
-
-                val = struct.unpack("<I", hash_bin[-4:])[0]
-                if val < THRESH:
-                    nonce = nonce_bin[::-1].encode("hex")
-                    print nonce, extranonce2, ntime
-                    print hash_bin.encode("hex")
-                    hash_int = uint256_from_str(hash_bin)
-                    block_hash_hex = "%064x" % hash_int
-                    print block_hash_hex
-
-
-                    self._cl.submit(job_id, extranonce2, ntime, nonce)
+                if self.quit:
                     break
-                elif val < THRESH*10:
-                    print "almost: %d (<%d)" % (val, THRESH)
-                i += 1
-                # elif i == 0:
-                    # print hash_bin.encode("hex")
             self._done_ev.set()
         except:
             traceback.print_exc()
