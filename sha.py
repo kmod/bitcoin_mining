@@ -94,12 +94,14 @@ def chunk(m, V):
     V[5] = (V[5] + f) & 0xffffffff
     V[6] = (V[6] + g) & 0xffffffff
     V[7] = (V[7] + h) & 0xffffffff
+    # print hex(V[0])
     return V
 
 def _test(s):
     import hashlib
     assert sha256(s) == hashlib.sha256(s).digest()
 if __name__ == "__main__":
+    # print sha256("abc").encode("hex")
     _test("abc")
     _test("abc")
     _test("abc" * 30)

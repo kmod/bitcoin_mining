@@ -95,7 +95,7 @@ endmodule
 
 
 module sha256_chunk(
-		input wire clk, input wire [511:0] data, input wire [255:0] V_in, output wire [255:0] hash
+		input wire clk, input wire [511:0] data, input wire [255:0] V_in, output wire [255:0] hash, output wire valid
 	);
 	/*
 	design choices:
@@ -116,6 +116,7 @@ module sha256_chunk(
 	endfunction
 	
 	// State:
+	reg [5:0] roundnum = 0;
 	reg [255:0] V;
 	reg [31:0] R[7:0]; // R[0] through R[7] represent a through h
 	reg [31:0] w[15:0];
@@ -125,19 +126,17 @@ module sha256_chunk(
 	wire [31:0] k;
 	karray karray(.idx(roundnum), .k(k));
 	
-	// On round i, we calculate nw=w[i+16].
 
-
-	assign hash[31:0] = V[31:0] + nR[0];
-	assign hash[63:32] = V[63:32] + nR[1];
-	assign hash[95:64] = V[95:64] + nR[2];
-	assign hash[127:96] = V[127:96] + nR[3];
-	assign hash[159:128] = V[159:128] + nR[4];
-	assign hash[191:160] = V[191:160] + nR[5];
-	assign hash[223:192] = V[223:192] + nR[6];
-	assign hash[255:224] = V[255:224] + nR[7];
+	assign hash[255:224] = V[31:0] + nR[0];
+	assign hash[223:192] = V[63:32] + nR[1];
+	assign hash[191:160] = V[95:64] + nR[2];
+	assign hash[159:128] = V[127:96] + nR[3];
+	assign hash[127:96] = V[159:128] + nR[4];
+	assign hash[95:64] = V[191:160] + nR[5];
+	assign hash[63:32] = V[223:192] + nR[6];
+	assign hash[31:0] = V[255:224] + nR[7];
 	
-	reg [5:0] roundnum = 0;
+	assign valid = (roundnum == 6'b111111);
 	
 	always @(*) begin
 		s0 = rotate(w[1], 7) ^ rotate(w[1], 18) ^ (w[1] >> 3);

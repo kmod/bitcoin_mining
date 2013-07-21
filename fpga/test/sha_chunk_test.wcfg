@@ -3,7 +3,7 @@
    <wave_state>
    </wave_state>
    <db_ref_list>
-      <db_ref path="C:/Dropbox/xilinx/processor/sha_chunk_test_isim_beh.wdb" id="1" type="auto">
+      <db_ref path="C:/Dropbox/bc/fpga/sha_chunk_test_isim_beh.wdb" id="1" type="auto">
          <top_modules>
             <top_module name="glbl" />
             <top_module name="sha_chunk_test" />
@@ -31,6 +31,10 @@
       <wvobject fp_name="/sha_chunk_test/clk" type="logic" db_ref_id="1">
          <obj_property name="ElementShortName">clk</obj_property>
          <obj_property name="ObjectShortName">clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/sha_chunk_test/uut/valid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">valid</obj_property>
+         <obj_property name="ObjectShortName">valid</obj_property>
       </wvobject>
    </wvobject>
    <wvobject fp_name="group13" type="group">
