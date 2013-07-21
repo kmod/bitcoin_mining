@@ -9,5 +9,5 @@ fpga/*
 !fpga/ipcore_dir
 !fpga/ipcore_dir/*
 !fpga/ipcore_dir/*/*
-ifpga/pcore_dir/_xmsgs
-ifpga/pcore_dir/tmp
+fpga/ipcore_dir/_xmsgs
+fpga/ipcore_dir/tmp

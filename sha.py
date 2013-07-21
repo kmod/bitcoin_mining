@@ -20,12 +20,15 @@ def precalc(preheader_bin):
 
 def finish_dsha(X, Y, nonce):
     V = list(X)
+    print "doing finish_dsha"
     chunk(Y + nonce + "\x80" + "\x00" * 45 + '\x02\x80', V)
-    digest = struct.pack(">IIIIIIII", *V)
+    digest1 = struct.pack(">IIIIIIII", *V)
+    print hex(X[0])
     V = list(H)
-    chunk(digest + "\x80" + "\x00" * 29 + "\x01\x00", V)
-    digest = struct.pack(">IIIIIIII", *V)
-    return digest
+    print "doing second of finish_dsha"
+    chunk(digest1 + "\x80" + "\x00" * 29 + "\x01\x00", V)
+    digest2 = struct.pack(">IIIIIIII", *V)
+    raise Exception(struct.pack(">IIIIIIII", *X[::-1]).encode("hex"), Y[::-1].encode("hex"), nonce[::-1].encode("hex"), digest1[::-1].encode("hex"), digest2[::-1].encode("hex"))
 
 def sha256(m):
     assert len(m) <= 2**32
@@ -82,7 +85,7 @@ def chunk(m, V):
         b = a
         a = (temp1 + temp2) & 0xffffffff
 
-        if 0:
+        if 1:
             print "%08x %08x %08x %08x %08x %08x %08x %08x" % (a, b, c, d, e, f, g, h),
             print "| %08x %08x %08x %08x %08x %08x %08x %08x" % (s1, ch, temp1, s0, maj, temp2, k[i], w[i])
 
@@ -101,10 +104,10 @@ def _test(s):
     import hashlib
     assert sha256(s) == hashlib.sha256(s).digest()
 if __name__ == "__main__":
-    # print sha256("abc").encode("hex")
     _test("abc")
     _test("abc")
     _test("abc" * 30)
+    print sha256("abc")[::-1].encode("hex")
 
 
 # for i in xrange(64):

@@ -92,7 +92,31 @@ module karray(
 	end
 endmodule
 
-
+module dsha_finisher(input wire clk, input wire [255:0] X, input wire [95:0] Y, input wire [31:0] in_nonce, output reg [255:0] hash, output wire [31:0] out_nonce);
+	wire [511:0] data1;
+	assign data1[95:0] = Y;
+	assign data1[127:96] = in_nonce;
+	assign data1[135:128] = 8'h80;
+	assign data1[495:136] = 0;
+	assign data1[511:496] = 16'h8002;
+	wire valid1;
+	
+	sha256_chunk chunk1(.clk(clk), .data(data1), .V_in(X), .hash(hash1), .valid(valid1));
+	
+	wire [255:0] hash1;
+	wire [511:0] data2;
+	assign data2[255:0] = hash1;
+	assign data2[263:256] = 8'h80;
+	assign data2[495:264] = 0;
+	assign data2[511:496] = 16'h0001;
+	
+	sha256_chunk chunk2(.clk(clk), .data(data2), .V_in(256'h5be0cd191f83d9ab9b05688c510e527fa54ff53a3c6ef372bb67ae856a09e667), .hash(hash2), .valid(valid2));
+	
+	wire [255:0] hash2;
+	always @(posedge clk) begin
+		if (valid2) hash = hash2;
+	end
+endmodule
 
 module sha256_chunk(
 		input wire clk, input wire [511:0] data, input wire [255:0] V_in, output wire [255:0] hash, output wire valid
@@ -127,14 +151,23 @@ module sha256_chunk(
 	karray karray(.idx(roundnum), .k(k));
 	
 
-	assign hash[255:224] = V[31:0] + nR[0];
+	/*assign hash[255:224] = V[31:0] + nR[0];
 	assign hash[223:192] = V[63:32] + nR[1];
 	assign hash[191:160] = V[95:64] + nR[2];
 	assign hash[159:128] = V[127:96] + nR[3];
 	assign hash[127:96] = V[159:128] + nR[4];
 	assign hash[95:64] = V[191:160] + nR[5];
 	assign hash[63:32] = V[223:192] + nR[6];
-	assign hash[31:0] = V[255:224] + nR[7];
+	assign hash[31:0] = V[255:224] + nR[7];*/
+	// I think this one is right:
+	assign hash[31:0] = flipbytes(V[31:0] + nR[0]);
+	assign hash[63:32] = flipbytes(V[63:32] + nR[1]);
+	assign hash[95:64] = flipbytes(V[95:64] + nR[2]);
+	assign hash[127:96] = flipbytes(V[127:96] + nR[3]);
+	assign hash[159:128] = flipbytes(V[159:128] + nR[4]);
+	assign hash[191:160] = flipbytes(V[191:160] + nR[5]);
+	assign hash[223:192] = flipbytes(V[223:192] + nR[6]);
+	assign hash[255:224] = flipbytes(V[255:224] + nR[7]);
 	
 	assign valid = (roundnum == 6'b111111);
 	

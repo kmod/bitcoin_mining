@@ -12,7 +12,7 @@ import sys
 import time
 import traceback
 
-TEST = 0
+TEST = 1
 THRESH = 1
 
 from util import RecentCache
