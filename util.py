@@ -8,7 +8,7 @@ class RecentCache(object):
         self._n = n
 
     def __setitem__(self, k, v):
-        print k, v
+        # print k, v
         self.d1[k] = v
         self.d2.pop(k, None)
         if len(self.d1) >= self._n:

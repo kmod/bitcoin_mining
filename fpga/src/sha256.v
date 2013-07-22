@@ -92,7 +92,7 @@ module karray(
 	end
 endmodule
 
-module dsha_finisher(input wire clk, input wire [255:0] X, input wire [95:0] Y, input wire [31:0] in_nonce, output reg [255:0] hash, output reg [31:0] out_nonce, output wire accepted);
+module dsha_finisher #(parameter START_ROUND=0) (input wire clk, input wire [255:0] X, input wire [95:0] Y, input wire [31:0] in_nonce, output reg [255:0] hash, output reg [31:0] out_nonce, output wire accepted);
 	wire [511:0] data1;
 	assign data1[95:0] = Y;
 	assign data1[127:96] = in_nonce;
@@ -100,7 +100,7 @@ module dsha_finisher(input wire clk, input wire [255:0] X, input wire [95:0] Y, 
 	assign data1[495:136] = 0;
 	assign data1[511:496] = 16'h8002;
 	
-	sha256_chunk chunk1(.clk(clk), .data(data1), .V_in(X), .hash(hash1), .valid(valid1));
+	sha256_chunk #(.START_ROUND(START_ROUND)) chunk1(.clk(clk), .data(data1), .V_in(X), .hash(hash1), .valid(valid1));
 	
 	wire valid1;
 	wire [255:0] hash1;
@@ -110,7 +110,7 @@ module dsha_finisher(input wire clk, input wire [255:0] X, input wire [95:0] Y, 
 	assign data2[495:264] = 0;
 	assign data2[511:496] = 16'h0001;
 	
-	sha256_chunk chunk2(.clk(clk), .data(data2), .V_in(256'h5be0cd191f83d9ab9b05688c510e527fa54ff53a3c6ef372bb67ae856a09e667), .hash(hash2), .valid(valid2));
+	sha256_chunk #(.START_ROUND(START_ROUND)) chunk2(.clk(clk), .data(data2), .V_in(256'h5be0cd191f83d9ab9b05688c510e527fa54ff53a3c6ef372bb67ae856a09e667), .hash(hash2), .valid(valid2));
 	
 	wire [255:0] hash2;
 	wire valid2;
@@ -127,8 +127,8 @@ module dsha_finisher(input wire clk, input wire [255:0] X, input wire [95:0] Y, 
 	end
 endmodule
 
-module sha256_chunk(
-		input wire clk, input wire [511:0] data, input wire [255:0] V_in, output wire [255:0] hash, output wire valid
+module sha256_chunk #(parameter START_ROUND=0) (
+		input wire clk, input wire [511:0] data, input wire [255:0] V_in, output wire [255:0] hash, output wire accepted, output wire valid
 	);
 	/*
 	design choices:
@@ -149,7 +149,7 @@ module sha256_chunk(
 	endfunction
 	
 	// State:
-	reg [5:0] roundnum = 0;
+	reg [5:0] roundnum = START_ROUND;
 	reg [255:0] V;
 	reg [31:0] R[7:0]; // R[0] through R[7] represent a through h
 	reg [31:0] w[15:0];
@@ -178,6 +178,7 @@ module sha256_chunk(
 	assign hash[223:192] = flipbytes(V[223:192] + nR[6]);
 	assign hash[255:224] = flipbytes(V[255:224] + nR[7]);
 	
+	assign accepted = (roundnum == 6'b111111);
 	assign valid = (roundnum == 6'b111111);
 	
 	always @(*) begin

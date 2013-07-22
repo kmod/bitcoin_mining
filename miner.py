@@ -84,9 +84,9 @@ class StratumClient(object):
         self.f.write("""{"id": 2, "method": "mining.authorize", "params": ["kmod_3", "123"]}\n""")
         self.f.flush()
 
-        self.w = None
         self.jobs = RecentCache(n=1000)
-        self.worker_cls = worker_cls
+
+        self.w = worker_cls(self)
 
     def run(self):
         while True:
@@ -120,9 +120,9 @@ class StratumClient(object):
                 assert d['params'] == [1]
 
             elif d.get('method', None) == "mining.notify":
-                if self.w:
-                    print "stopping existing worker"
-                    self.w.stop()
+                print "stopping worker"
+                self.w.stop()
+                print "stopped"
 
                 params, clean_jobs = d['params'][:-1], d['params'][:-1]
                 j = JobInfo(extranonce1, *params)
@@ -132,7 +132,7 @@ class StratumClient(object):
                 extranonce2 = struct.pack(">I", extranonce2).encode("hex")
                 if TEST:
                     extranonce2 = "00000001"
-                print extranonce2
+                print "extranonce2 = %s" % extranonce2
 
                 coinbase = j.coinb1 + extranonce1 + extranonce2 + j.coinb2
                 coinbase_hash_bin = doublesha(binascii.unhexlify(coinbase))
@@ -148,7 +148,6 @@ class StratumClient(object):
                 preheader_bin = preheader.decode("hex")
                 preheader_bin = ''.join([preheader_bin[i*4:i*4+4][::-1] for i in range(0,19)])
 
-                self.w = self.worker_cls(self)
                 self.w.start(j.id, extranonce2, ntime, preheader_bin)
 
             else:
@@ -170,10 +169,14 @@ class StratumClient(object):
 class WorkerBase(object):
     def __init__(self, cl):
         self._cl = cl
-        self._quit = False
+        self._quit = True
+
         self._done_ev = threading.Event()
+        self._done_ev.set()
 
     def start(self, job_id, extranonce2, ntime, preheader_bin):
+        self._quit = False
+        self._done_ev.clear()
         t = threading.Thread(target=self._target, args=(job_id, extranonce2, ntime, preheader_bin))
         t.setDaemon(True)
         t.start()

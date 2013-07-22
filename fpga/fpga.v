@@ -33,7 +33,7 @@ module fpga(
 	wire clk; // 10MHz clock
 	dcm dcm(.CLK_IN(input_clk), .CLK_OUT(clk)); // 100MHz -> 10MHz DCM
 
-	assign led = sw;
+	assign led = in_nonce[31:24];
 	
 	// button synchronizer:
 	reg [4:0] btn_sync, btn_sync2;
@@ -59,7 +59,7 @@ module fpga(
 	/*
 	Baud rates
 	Baud\MHz		10		50		80		100
-	115,200		87		434	694	868
+	115200		87		434	694	868
 	*/
 	
 	wire uart_tx_req, uart_tx_ready;
@@ -85,7 +85,7 @@ module fpga(
 	assign Y = uart_rx_data[351:256]; // ex 96'h1c2ac4af504e86edec9d69b1
 	//assign nonce = uart_rx_data[383:352]; // ex 32'hb2957c02
 	
-	reg [31:0] in_nonce = 32'hb2957c02;
+	reg [31:0] in_nonce = 32'h0;
 	wire dsha_accepted;
 	
 	always @(posedge clk) begin
