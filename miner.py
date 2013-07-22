@@ -17,7 +17,6 @@ THRESH = 1
 
 from util import RecentCache
 import sha
-import fpga
 
 def doublesha(d):
     return hashlib.sha256(hashlib.sha256(d).digest()).digest()
@@ -237,6 +236,7 @@ class CpuWorker(WorkerBase):
 
 class FPGAWorker(WorkerBase):
     def __init__(self, cl):
+        import fpga
         super(FPGAWorker, self).__init__(cl)
 
         self.scl = fpga.FPGAController()

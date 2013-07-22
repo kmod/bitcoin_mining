@@ -32,6 +32,7 @@ class FPGAController(object):
         t.start()
 
         self.last_msg = None
+        FPGAController.__init__ = None
 
     def read_thread(self):
         msg = ""

@@ -33,7 +33,7 @@ module fpga(
 	wire clk; // 10MHz clock
 	dcm dcm(.CLK_IN(input_clk), .CLK_OUT(clk)); // 100MHz -> 10MHz DCM
 
-	assign led = in_nonce[31:24];
+	assign led = sw;
 	
 	// button synchronizer:
 	reg [4:0] btn_sync, btn_sync2;
@@ -52,7 +52,7 @@ module fpga(
 	reg [4:0] btn_prev;
 	
 	wire [15:0] sseg_data;
-	assign sseg_data = uart_rx_data[15:0];
+	assign sseg_data = in_nonce[31:16];
 	sseg #(.N(16)) sseg(.clk(clk), .in(sseg_data), .c(seg), .an(an));
 	
 	
