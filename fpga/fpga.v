@@ -69,7 +69,7 @@ module fpga(
 	assign uart_tx_data[295:264] = out_nonce;
 	assign uart_tx_data[303:296] = 8'haa;
 	assign uart_tx_data[511:448] = 64'hdead432987beefaa;
-	assign uart_tx_req = (out_hash[255:224] == 0);
+	assign uart_tx_req = success;
 	uart_multibyte_transmitter #(.CLK_CYCLES(694), .MSG_LOG_WIDTH(6)) uart_mbtx(.clk(clk), .data(uart_tx_data), .req(uart_tx_req), .uart_tx(RsTx));
 	
 	// Input synchronizer:
@@ -86,17 +86,71 @@ module fpga(
 	//assign nonce = uart_rx_data[383:352]; // ex 32'hb2957c02
 	
 	reg [31:0] in_nonce = 32'h0;
-	wire dsha_accepted;
 	
 	always @(posedge clk) begin
-		if (dsha_accepted) in_nonce <= in_nonce + 1;
+		if (accepted) in_nonce <= in_nonce + 1;
 	end
 	
 	uart_multibyte_receiver #(.CLK_CYCLES(694), .MSG_LOG_WIDTH(6)) uart_mbrx(.clk(clk), .data(uart_rx_data), .valid(uart_rx_valid), .ack(1'b0), .uart_rx(RsRx2));
 	
-	wire [255:0] out_hash;
-	wire [31:0] out_nonce;
-	dsha_finisher dsha(.clk(clk), .X(X), .Y(Y), .in_nonce(in_nonce), .hash(out_hash), .out_nonce(out_nonce), .accepted(dsha_accepted));
+	
+	reg [255:0] out_hash;
+	reg [31:0] out_nonce;
+	wire accepted, success;
+	
+	localparam NUM_COPIES = 3;
+	wire [255:0] _out_hash[NUM_COPIES-1:0];
+	wire [31:0] _out_nonce[NUM_COPIES-1:0];
+	wire [NUM_COPIES-1:0] _dsha_accepted, _dsha_success;
+	generate	
+		for (idx = 0; idx < NUM_COPIES; idx = idx + 1) begin: block_dsha
+			assign _dsha_success[idx] = (_out_hash[idx][255:224+8] == 0) && (sw[0] || (_out_hash[idx][231:224] == 0));
+			dsha_finisher #(.START_ROUND(idx)) dsha(.clk(clk), .X(X), .Y(Y), .in_nonce(in_nonce), .hash(_out_hash[idx]), .out_nonce(_out_nonce[idx]), .accepted(_dsha_accepted[idx]));
+		end
+	endgenerate
+	integer i;
+	always @(*) begin
+		out_hash = _out_hash[0];
+		out_nonce = _out_nonce[0];
+		
+		/*if (_dsha_success[1]) begin
+			out_hash = _out_hash[1];
+			out_nonce = _out_nonce[1];
+		end
+		if (_dsha_success[2]) begin
+			out_hash = _out_hash[2];
+			out_nonce = _out_nonce[2];
+		end*/
+		for (i = 1; i < NUM_COPIES; i = i + 1) begin
+			if (_dsha_success[i]) begin
+				out_hash = _out_hash[i];
+				out_nonce = _out_nonce[i];
+			end
+		end
+	end
+	assign accepted = (_dsha_accepted != 0);
+	assign success = (_dsha_success != 0);
+	
+	/*wire [255:0] out_hash1;
+	wire [31:0] out_nonce1;
+	wire dsha_accepted1, success1;
+	assign success1 = (out_hash1[255:224+8] == 0);
+	dsha_finisher #(.START_ROUND(0)) dsha1(.clk(clk), .X(X), .Y(Y), .in_nonce(in_nonce), .hash(out_hash1), .out_nonce(out_nonce1), .accepted(dsha_accepted1));
+	wire [255:0] out_hash2;
+	wire [31:0] out_nonce2;
+	wire dsha_accepted2, success2;
+	assign success2 = (out_hash2[255:224+8] == 0);
+	dsha_finisher #(.START_ROUND(8)) dsha2(.clk(clk), .X(X), .Y(Y), .in_nonce(in_nonce), .hash(out_hash2), .out_nonce(out_nonce2), .accepted(dsha_accepted2));
+	wire [255:0] out_hash3;
+	wire [31:0] out_nonce3;
+	wire dsha_accepted3, success3;
+	assign success3 = (out_hash3[255:224+8] == 0);
+	dsha_finisher #(.START_ROUND(16)) dsha3(.clk(clk), .X(X), .Y(Y), .in_nonce(in_nonce), .hash(out_hash3), .out_nonce(out_nonce3), .accepted(dsha_accepted3));
+	
+	assign success = (success1 || success2 || success3);
+	assign accepted = (dsha_accepted1 || dsha_accepted2 || dsha_accepted3);
+	assign out_hash = (success1 ? out_hash1 : (success2 ? out_hash2 : out_hash3));
+	assign out_nonce = (success1 ? out_nonce1 : (success2 ? out_nonce2 : out_nonce3));*/
 	
 	
 	
