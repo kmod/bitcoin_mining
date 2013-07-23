@@ -63,14 +63,13 @@ module fpga(
 	*/
 	
 	wire uart_tx_req, uart_tx_ready;
-	wire [511:0] uart_tx_data;
-	assign uart_tx_data[255:0] = out_hash;
-	assign uart_tx_data[263:256] = 8'haa;
-	assign uart_tx_data[295:264] = out_nonce;
-	assign uart_tx_data[303:296] = 8'haa;
-	assign uart_tx_data[511:448] = 64'hdead432987beefaa;
+	wire [255:0] uart_tx_data;
+	assign uart_tx_data[7:0] = 8'haa;
+	assign uart_tx_data[39:8] = out_nonce;
+	assign uart_tx_data[47:40] = 8'haa;
+	assign uart_tx_data[255:192] = 64'hdead432987beefaa;
 	assign uart_tx_req = success;
-	uart_multibyte_transmitter #(.CLK_CYCLES(694), .MSG_LOG_WIDTH(6)) uart_mbtx(.clk(clk), .data(uart_tx_data), .req(uart_tx_req), .uart_tx(RsTx));
+	uart_multibyte_transmitter #(.CLK_CYCLES(694), .MSG_LOG_WIDTH(5)) uart_mbtx(.clk(clk), .data(uart_tx_data), .req(uart_tx_req), .uart_tx(RsTx));
 	
 	// Input synchronizer:
 	reg RsRx1=1, RsRx2=1;
@@ -94,11 +93,10 @@ module fpga(
 	uart_multibyte_receiver #(.CLK_CYCLES(694), .MSG_LOG_WIDTH(6)) uart_mbrx(.clk(clk), .data(uart_rx_data), .valid(uart_rx_valid), .ack(1'b0), .uart_rx(RsRx2));
 	
 	
-	reg [255:0] out_hash;
 	reg [31:0] out_nonce;
 	wire accepted, success;
 	
-	localparam NUM_COPIES = 3;
+	localparam NUM_COPIES = 4;
 	wire [255:0] _out_hash[NUM_COPIES-1:0];
 	wire [31:0] _out_nonce[NUM_COPIES-1:0];
 	wire [NUM_COPIES-1:0] _dsha_accepted, _dsha_success;
@@ -110,20 +108,16 @@ module fpga(
 	endgenerate
 	integer i;
 	always @(*) begin
-		out_hash = _out_hash[0];
 		out_nonce = _out_nonce[0];
 		
 		/*if (_dsha_success[1]) begin
-			out_hash = _out_hash[1];
 			out_nonce = _out_nonce[1];
 		end
 		if (_dsha_success[2]) begin
-			out_hash = _out_hash[2];
 			out_nonce = _out_nonce[2];
 		end*/
 		for (i = 1; i < NUM_COPIES; i = i + 1) begin
 			if (_dsha_success[i]) begin
-				out_hash = _out_hash[i];
 				out_nonce = _out_nonce[i];
 			end
 		end

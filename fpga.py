@@ -41,11 +41,11 @@ class FPGAController(object):
             msg += c
             if msg.endswith("\xde\xad\x43\x29\x87\xbe\xef\xaa"[::-1]):
                 s = msg.encode("hex")
-                if len(msg) == 64:
+                if len(msg) == 32:
                     self.last_msg = msg
-                    print "received: %s %s" % (s[:64], s[64:])
+                    print "received: %s" % (s,)
                 else:
-                    print "bad msg:  %s %s" % (s[:64], s[64:])
+                    print "bad msg:  %s" % (s)
 
                 msg = ""
 
@@ -83,18 +83,15 @@ class FPGAController(object):
             m = self.last_msg
             self.last_msg = None
 
-            digest = m[:32]
-            assert m[32] == '\xaa'
-            nonce = m[33:37]
+            assert m[0] == '\xaa'
+            nonce = m[1:5]
             print "raw nonce: %s" % (nonce.encode("hex"),)
-            assert m[37] == '\xaa'
+            assert m[5] == '\xaa'
             real_digest = sha.finish_dsha(_X, Y, nonce)
-            print "gives digest: %s" % (digest.encode("hex"),)
-            assert digest == real_digest, (digest.encode("hex"), real_digest.encode("hex"))
-            assert digest.endswith("\x00\x00")
+            print "gives digest: %s" % (real_digest.encode("hex"),)
+            # assert digest == real_digest, (digest.encode("hex"), real_digest.encode("hex"))
+            assert real_digest.endswith("\x00\x00")
             yield nonce[::-1]
-
-            prev_msg = m
 
 if __name__ == "__main__":
     c = FPGAController()

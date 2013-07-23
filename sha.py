@@ -48,7 +48,7 @@ def sha256(m):
     return digest
 
 def chunk(m, V):
-    assert len(m) == 64
+    assert len(m) == 64, len(m)
     w = [struct.unpack(">I", m[i:i+4])[0] for i in xrange(0, 64, 4)]
     # print w
     assert len(w) == 16

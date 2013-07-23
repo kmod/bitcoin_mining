@@ -76,7 +76,7 @@ class JobInfo(object):
 class StratumClient(object):
     def __init__(self, f, worker_cls):
         self.mid = 3
-        self.done = False
+        self.nfound = 0
 
         self.f = f
         self.f.write("""{"id": 1, "method": "mining.subscribe", "params": []}\n""")
@@ -104,8 +104,8 @@ class StratumClient(object):
             assert s
             d = simplejson.loads(s)
 
-            if d.get('method', None) == "mining.notify" and self.done:
-                continue
+            # if d.get('method', None) == "mining.notify" and self.done:
+                # continue
 
             print d
 
@@ -163,7 +163,7 @@ class StratumClient(object):
         self.f.write(cmd)
         self.f.flush()
         self.mid += 1
-        self.done = True
+        self.nfound += 1
 
 class WorkerBase(object):
     def __init__(self, cl):
