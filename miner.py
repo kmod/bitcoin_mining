@@ -14,6 +14,8 @@ import traceback
 
 TEST = 0
 THRESH = 1
+WORKER_NAME = "kmod.kmod1"
+WORKER_PW = os.environ["WORKER_PW"]
 
 from util import RecentCache
 import sha
@@ -80,7 +82,7 @@ class StratumClient(object):
 
         self.f = f
         self.f.write("""{"id": 1, "method": "mining.subscribe", "params": []}\n""")
-        self.f.write("""{"id": 2, "method": "mining.authorize", "params": ["kmod_3", "123"]}\n""")
+        self.f.write("""{"id": 2, "method": "mining.authorize", "params": ["%s", "%s"]}\n""" % (WORKER_NAME, WORKER_PW))
         self.f.flush()
 
         self.jobs = RecentCache(n=1000)
@@ -88,6 +90,7 @@ class StratumClient(object):
         self.w = worker_cls(self)
 
     def run(self):
+        difficulty = 1
         while True:
             s = self.f.readline()
             if not s:
@@ -116,7 +119,7 @@ class StratumClient(object):
                 subscription, extranonce1, extranonce2_size = d['result']
 
             elif d.get('method', None) == "mining.set_difficulty":
-                assert d['params'] == [1]
+                difficulty = d['params'][0]
 
             elif d.get('method', None) == "mining.notify":
                 print "stopping worker"
@@ -154,7 +157,7 @@ class StratumClient(object):
 
     def submit(self, job_id, extranonce2, ntime, nonce):
         print "SUBMITTING"
-        cmd = """{"params": ["kmod_3", "%s", "%s", "%s", "%s"], "id": %d, "method":"mining.submit"}\n""" % (job_id, extranonce2, ntime, nonce, self.mid)
+        cmd = """{"params": ["%s", "%s", "%s", "%s", "%s"], "id": %d, "method":"mining.submit"}\n""" % (WORKER_NAME, job_id, extranonce2, ntime, nonce, self.mid)
         print cmd
         j = self.jobs[job_id]
 
@@ -262,7 +265,8 @@ class FPGAWorker(WorkerBase):
 
 if __name__ == "__main__":
     sock = socket.socket()
-    sock.connect(("stratum.btcguild.com", 3333))
+    # sock.connect(("stratum.btcguild.com", 3333))
+    sock.connect(("coins.arstechnica.com", 3333))
 
     worker_cls = CpuWorker
     if len(sys.argv) >= 2:
