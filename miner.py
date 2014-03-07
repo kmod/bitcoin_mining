@@ -41,6 +41,7 @@ class JobInfo(object):
         self.ntime = ntime
 
     def verify(self, extranonce2, ntime, nonce):
+        return
         coinbase = self.coinb1 + self.extranonce1 + extranonce2 + self.coinb2
         coinbase_hash_bin = doublesha(binascii.unhexlify(coinbase))
         merkle_root = build_merkle_root(self.merkle_branch, coinbase_hash_bin)
@@ -129,7 +130,7 @@ class StratumClient(object):
                 preheader_bin = preheader.decode("hex")
                 preheader_bin = ''.join([preheader_bin[i*4:i*4+4][::-1] for i in range(0,19)])
 
-                self.w.start(j.id, extranonce2, ntime, preheader_bin)
+                self.w.start(difficulty, j.id, extranonce2, ntime, preheader_bin)
 
             else:
                 assert d['id'] < self.mid
@@ -152,7 +153,8 @@ if __name__ == "__main__":
     # sock.connect(("stratum.btcguild.com", 3333))
     sock.connect(("coins.arstechnica.com", 3333))
 
-    from sha_mining import CpuWorker, FPGAWorker
+    # from sha_mining import CpuWorker, FPGAWorker
+    from scrypt_mining import CpuWorker
 
     worker_cls = CpuWorker
     if len(sys.argv) >= 2:

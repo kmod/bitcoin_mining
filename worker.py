@@ -8,10 +8,10 @@ class WorkerBase(object):
         self._done_ev = threading.Event()
         self._done_ev.set()
 
-    def start(self, job_id, extranonce2, ntime, preheader_bin):
+    def start(self, difficulty, job_id, extranonce2, ntime, preheader_bin):
         self._quit = False
         self._done_ev.clear()
-        t = threading.Thread(target=self._target, args=(job_id, extranonce2, ntime, preheader_bin))
+        t = threading.Thread(target=self._target, args=(difficulty, job_id, extranonce2, ntime, preheader_bin))
         t.setDaemon(True)
         t.start()
 
