@@ -39,12 +39,12 @@ class CpuWorker(WorkerBase):
                 if TEST:
                     i = 0x012d59d4
 
-                if i and i % 1000 == 0:
+                if self._quit:
+                    print "QUITTING WORKER"
+                    break
+                if i and i % 10000 == 0:
                     hashrate = i * 1.0 / (time.time() - start + .001)
                     print i, "%.1f kh/s (%.1fs/share))" % (hashrate * 0.001, hashes_per_thresh / hashrate)
-                    if self._quit:
-                        print "QUITTING WORKER"
-                        break
 
                 nonce_bin = struct.pack(">I", i)
 
