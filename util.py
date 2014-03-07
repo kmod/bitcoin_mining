@@ -1,3 +1,5 @@
+import struct
+
 class RecentCache(object):
     """
     very simple LRU-ish cache
@@ -19,3 +21,18 @@ class RecentCache(object):
         if k in self.d1:
             return self.d1[k]
         return self.d2[k]
+
+def uint256_from_str(s):
+    r = 0L
+    t = struct.unpack("<IIIIIIII", s[:32])
+    for i in xrange(8):
+        r += t[i] << (i * 32)
+    return r
+def ser_uint256_be(u):
+    '''ser_uint256 to big endian'''
+    rs = ""
+    for i in xrange(8):
+        rs += struct.pack(">I", u & 0xFFFFFFFFL)
+        u >>= 32
+    return rs    
+

@@ -17,37 +17,16 @@ THRESH = 1
 WORKER_NAME = "kmod.kmod1"
 WORKER_PW = os.environ["WORKER_PW"]
 
-from util import RecentCache
-import sha
+from util import RecentCache, ser_uint256_be, uint256_from_str
 
 def doublesha(d):
     return hashlib.sha256(hashlib.sha256(d).digest()).digest()
-
-def finish_dsha(sha_obj, end):
-    sha_obj = sha_obj.copy()
-    sha_obj.update(end)
-    # return sha.sha256(sha_obj.digest())
-    return hashlib.sha256(sha_obj.digest()).digest()
 
 def build_merkle_root(merkle_branch, coinbase_hash_bin):
     merkle_root = coinbase_hash_bin
     for h in merkle_branch:
         merkle_root = doublesha(merkle_root + binascii.unhexlify(h))
     return merkle_root
-
-def uint256_from_str(s):
-    r = 0L
-    t = struct.unpack("<IIIIIIII", s[:32])
-    for i in xrange(8):
-        r += t[i] << (i * 32)
-    return r
-def ser_uint256_be(u):
-    '''ser_uint256 to big endian'''
-    rs = ""
-    for i in xrange(8):
-        rs += struct.pack(">I", u & 0xFFFFFFFFL)
-        u >>= 32
-    return rs    
 
 class JobInfo(object):
     def __init__(self, extranonce1, id, prevhash, coinb1, coinb2, merkle_branch, version, nbits, ntime):
@@ -168,105 +147,12 @@ class StratumClient(object):
         self.mid += 1
         self.nfound += 1
 
-class WorkerBase(object):
-    def __init__(self, cl):
-        self._cl = cl
-        self._quit = True
-
-        self._done_ev = threading.Event()
-        self._done_ev.set()
-
-    def start(self, job_id, extranonce2, ntime, preheader_bin):
-        self._quit = False
-        self._done_ev.clear()
-        t = threading.Thread(target=self._target, args=(job_id, extranonce2, ntime, preheader_bin))
-        t.setDaemon(True)
-        t.start()
-
-    def stop(self):
-        self._quit = True
-        self._done_ev.wait()
-
-class CpuWorker(WorkerBase):
-    def _target(self, job_id, extranonce2, ntime, preheader_bin):
-        try:
-            start = time.time()
-
-            first_sha = hashlib.sha256(preheader_bin)
-
-            if sys.maxint > 2**32:
-                max_nonce = 2**32
-            else:
-                max_nonce = 2**31 - 1
-            i = 0
-            while i < max_nonce:
-                if i % 100000 == 0:
-                    print i, "%.1f kh/s" % (i * .001 / (time.time() - start + .001))
-                    if self._quit:
-                        print "QUITTING WORKER"
-                        break
-
-                nonce_bin = struct.pack(">I", i)
-                if TEST:
-                    nonce_bin = "b2957c02".decode("hex")[::-1]
-
-                # header_bin = preheader_bin + nonce_bin
-                # hash_bin = doublesha(header_bin)
-                # assert hash_bin == finish_dsha(first_sha, nonce_bin)
-                hash_bin = finish_dsha(first_sha, nonce_bin)
-
-                val = struct.unpack("<I", hash_bin[-4:])[0]
-                if val < THRESH:
-                    nonce = nonce_bin[::-1].encode("hex")
-                    print nonce, extranonce2, ntime
-                    print hash_bin.encode("hex")
-                    hash_int = uint256_from_str(hash_bin)
-                    block_hash_hex = "%064x" % hash_int
-                    print block_hash_hex
-
-
-                    self._cl.submit(job_id, extranonce2, ntime, nonce)
-                    break
-                elif val < THRESH*10:
-                    print "almost: %d (<%d)" % (val, THRESH)
-                i += 1
-                # elif i == 0:
-                    # print hash_bin.encode("hex")
-            self._done_ev.set()
-        except:
-            traceback.print_exc()
-            os._exit(1)
-
-class FPGAWorker(WorkerBase):
-    def __init__(self, cl):
-        import fpga
-        super(FPGAWorker, self).__init__(cl)
-
-        self.scl = fpga.FPGAController()
-
-    def _target(self, job_id, extranonce2, ntime, preheader_bin):
-        try:
-            X, Y = sha.precalc(preheader_bin)
-
-            self.scl.start_dsha(X, Y)
-
-            for nonce_bin in self.scl.winning_nonces_gen(X, Y):
-                if self._quit:
-                    break
-                if nonce_bin is None:
-                    continue
-                nonce = nonce_bin.encode("hex")
-                self._cl.submit(job_id, extranonce2, ntime, nonce)
-
-            self._done_ev.set()
-        except:
-            traceback.print_exc()
-            os._exit(1)
-
 if __name__ == "__main__":
     sock = socket.socket()
     # sock.connect(("stratum.btcguild.com", 3333))
     sock.connect(("coins.arstechnica.com", 3333))
+
+    from sha_mining import CpuWorker, FPGAWorker
 
     worker_cls = CpuWorker
     if len(sys.argv) >= 2:
