@@ -27,7 +27,6 @@ class CpuWorker(WorkerBase):
             # # THRESH = 1 << difficulty
             # # THRESH /= 4
             # THRESH = 0x00002000
-            THRESH *= 2
             print "thresh:", THRESH
 
             hashes_per_thresh = (1 << 32) / THRESH
