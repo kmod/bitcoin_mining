@@ -19,7 +19,7 @@ def finish_dsha(sha_obj, end):
     return hashlib.sha256(sha_obj.digest()).digest()
 
 class CpuWorker(WorkerBase):
-    def _target(self, job_id, extranonce2, ntime, preheader_bin):
+    def _target(self, difficulty, job_id, extranonce2, ntime, preheader_bin):
         try:
             start = time.time()
 

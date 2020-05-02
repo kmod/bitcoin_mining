@@ -150,11 +150,11 @@ class StratumClient(object):
 
 if __name__ == "__main__":
     sock = socket.socket()
-    # sock.connect(("stratum.btcguild.com", 3333))
-    sock.connect(("coins.arstechnica.com", 3333))
+    sock.connect(("stratum.slushpool.com", 3333))
+    # sock.connect(("coins.arstechnica.com", 3333))
 
-    # from sha_mining import CpuWorker, FPGAWorker
-    from scrypt_mining import CpuWorker
+    from sha_mining import CpuWorker, FPGAWorker
+    # from scrypt_mining import CpuWorker
 
     worker_cls = CpuWorker
     if len(sys.argv) >= 2:
